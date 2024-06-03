@@ -18,10 +18,10 @@ function ModuleLoader:RequireModule(Module)
      if not Module:IsA("ModuleScript") then
           return
      end
-     
+
      local Import = require(Module)
      local RunModule = Import.OnStart
-     
+
      if RunModule then
           task.spawn(RunModule)
      end
@@ -33,12 +33,26 @@ function ModuleLoader:CheckLoader()
      end
 end
 
+function ModuleLoader:DestroyScripts(Module)
+     if Module:IsA("ModuleScript") and Module:IsA("Script") and Module:IsA("LocalScript") then
+          return
+     end
+     
+     for _, Descendant in self:DescendantLoader() do
+          Descendant:Destroy()
+     end
+end
+
 function ModuleLoader:RequireDescendants()
      self:CheckLoader()
-     
+
      if not Server then
           ModuleDirectory.DescendantAdded:Connect(function(Descendant)
                self:RequireModule(Descendant)
+          end)
+
+          ModuleDirectory.DescendantRemoving:Connect(function(Descendant)
+               self:DestroyScripts(Descendant)
           end)
      end
 end
