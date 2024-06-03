@@ -11,16 +11,6 @@ local ModuleDirectory = if Server then RootDirectory.Services else RootDirectory
 local ModuleLoader = {}
 ModuleLoader.__index = ModuleLoader
 
-function ModuleLoader:New()
-     local self = setmetatable({}, ModuleLoader)
-     
-     self.Client = not Server
-     
-     self:RequireModule()
-
-     return self
-end
-
 function ModuleLoader:DescendantLoader()
      return ModuleDirectory:GetDescendants()
 end
@@ -39,24 +29,13 @@ function ModuleLoader:RequireModule(Module : (ModuleScript))
 end
 
 function ModuleLoader:CheckLoader()
-     for _, Descendant : (ModuleScript) in pairs(self:DescendantLoader()) do
+     for _, Descendant : (ModuleScript) in self:DescendantLoader() do
           self:RequireModule(Descendant)
-     end
-end
-
-function ModuleLoader:Run()
-     self:CheckLoader()
-
-     if self.Client then
-          ModuleDirectory.DescendantAdded:Connect(function(Descendant : (ModuleScript))
-               self:RequireModule(Descendant)
-          end)
      end
 end
 
 function ModuleLoader:RequireDescendants()
      self:CheckLoader()
-
      if self.Client then
           ModuleDirectory.DescendantAdded:Connect(function(Descendant : (ModuleScript))
                self:RequireModule(Descendant)
