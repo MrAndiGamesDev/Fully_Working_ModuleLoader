@@ -9,13 +9,12 @@ local RootDirectory = if Server then ServerScriptService else Players.LocalPlaye
 local ModuleDirectory = if Server then RootDirectory.Services else RootDirectory:WaitForChild("Controllers")
 
 local ModuleLoader = {}
-ModuleLoader.__index = ModuleLoader
 
 function ModuleLoader:DescendantLoader()
      return ModuleDirectory:GetDescendants()
 end
 
-function ModuleLoader:RequireModule(Module : (ModuleScript))
+function ModuleLoader:RequireModule(Module)
      if not Module:IsA("ModuleScript") then
           return
      end
@@ -29,20 +28,21 @@ function ModuleLoader:RequireModule(Module : (ModuleScript))
 end
 
 function ModuleLoader:CheckLoader()
-     for _, Descendant : (ModuleScript) in self:DescendantLoader() do
+     for _, Descendant in self:DescendantLoader() do
           self:RequireModule(Descendant)
      end
 end
 
 function ModuleLoader:RequireDescendants()
      self:CheckLoader()
-     if self.Client then
-          ModuleDirectory.DescendantAdded:Connect(function(Descendant : (ModuleScript))
+     
+     if not Server then
+          ModuleDirectory.DescendantAdded:Connect(function(Descendant)
                self:RequireModule(Descendant)
           end)
      end
 end
 
-return function()
+return function ()
      ModuleLoader:RequireDescendants()
 end
