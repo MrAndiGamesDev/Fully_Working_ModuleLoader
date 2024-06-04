@@ -10,6 +10,18 @@ local ModuleDirectory = if Server then RootDirectory.Services else RootDirectory
 
 local ModuleLoader = {}
 
+function ModuleLoader.Start()
+     local self = setmetatable({}, ModuleLoader)
+     
+     self:RequireDescendants()
+     self:DescendantLoader()
+     self:RequireModule()
+     self:CheckLoader()
+     self:DestroyScripts()
+     
+     return self
+end
+
 function ModuleLoader:DescendantLoader()
      return ModuleDirectory:GetDescendants()
 end
@@ -58,5 +70,6 @@ function ModuleLoader:RequireDescendants()
 end
 
 return function ()
-     ModuleLoader:RequireDescendants()
+     local self = ModuleLoader and ModuleLoader:RequireDescendants() and ModuleLoader.Start()
+     return self
 end
