@@ -11,7 +11,7 @@ local ModuleDirectory = if Server then RootDirectory.Services else RootDirectory
 local ModuleLoader = {}
 ModuleLoader.__index = ModuleLoader
 
-function ModuleLoader.Start()
+function ModuleLoader:Start()
      local self = setmetatable({}, ModuleLoader)
      
      self:RequireDescendants()
@@ -26,11 +26,11 @@ function ModuleLoader.Start()
 end
 
 function ModuleLoader:NewPrint(...)
-     print(`{...}`)
+     print(...)
 end
 
 function ModuleLoader:NewWarn(...)
-     warn(`{...}`)
+     warn(...)
 end
 
 function ModuleLoader:DescendantLoader()
@@ -90,7 +90,7 @@ return function ()
      local self = ModuleLoader
      
      local Success, Result = pcall(function()
-          return (self or ModuleLoader) and self:RequireDescendants() and self.Start()
+          return (self or ModuleLoader) and self:RequireDescendants() and self:Start()
      end)
      
      if Success then
