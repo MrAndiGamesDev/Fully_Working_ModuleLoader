@@ -2,22 +2,33 @@ local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
-local StarterPlayerScripts = StarterPlayer.StarterPlayerScripts
 
-local Server, Client = RunService:IsServer(), RunService:IsClient()
-local RootDirectory = if Server then ServerScriptService else StarterPlayerScripts or Players.LocalPlayer:WaitForChild("PlayerScripts")
-local ModuleDirectory = if Server then RootDirectory.Services else RootDirectory:WaitForChild("Controllers")
+local StarterPlayerScripts = StarterPlayer.StarterPlayerScripts
+local Player = Players.LocalPlayer
 
 local ModuleLoader = {}
 ModuleLoader.__index = ModuleLoader
 
+ModuleLoader.Server = RunService:IsServer()
+ModuleLoader.Client = RunService:IsClient()
+
+ModuleLoader.RootDirectory = if ModuleLoader.Server then ServerScriptService else StarterPlayerScripts or Player:WaitForChild("PlayerScripts")
+ModuleLoader.ModuleDirectory = if ModuleLoader.Server then ModuleLoader.RootDirectory.Services else ModuleLoader.RootDirectory:WaitForChild("Controllers")
+
 function ModuleLoader:Start()
      local self = setmetatable({}, ModuleLoader)
+     
+     self.Server = self.Server
+     self.Client = self.Client
+     
+     self.RootDirectory = self.RootDirectory
+     self.ModuleDirectory = self.ModuleDirectory
      
      self:RequireDescendants()
      self:DescendantLoader()
      self:RequireModule()
      self:CheckLoader()
+     self:LoadModule()
      self:DestroyScripts()
      self:NewPrint()
      self:NewWarn()
@@ -34,10 +45,10 @@ function ModuleLoader:NewWarn(...)
 end
 
 function ModuleLoader:DescendantLoader()
-     return ModuleDirectory:GetDescendants()
+     return self.ModuleDirectory:GetDescendants()
 end
 
-function ModuleLoader:RequireModule(Module)
+function ModuleLoader:RequireModule(Module : any)
      if not Module:IsA("ModuleScript") then
           return
      end
@@ -56,7 +67,7 @@ function ModuleLoader:CheckLoader()
      end
 end
 
-function ModuleLoader:DestroyScripts(Module)
+function ModuleLoader:DestroyScripts(Module : any)
      if Module:IsA("ModuleScript") and Module:IsA("Script") and Module:IsA("LocalScript") then
           return
      end
@@ -69,12 +80,12 @@ end
 function ModuleLoader:RequireDescendants()
      self:CheckLoader()
 
-     if not Server and Client then
-          ModuleDirectory.DescendantAdded:Connect(function(Descendant)
+     if not self.Server and self.Client then
+          self.ModuleDirectory.DescendantAdded:Connect(function(Descendant)
                self:RequireModule(Descendant)
           end)
 
-          ModuleDirectory.DescendantRemoving:Connect(function(Descendant)
+          self.ModuleDirectory.DescendantRemoving:Connect(function(Descendant)
                self:DestroyScripts(Descendant)
           end)
      end
@@ -83,21 +94,25 @@ end
 function ModuleLoader:Calulate(...)
      local StartTime = tick()
      local EndTime = tick()
-     self:NewWarn(`>> Loaded Module Took {("(took %.3f seconds)"):format(EndTime - StartTime)} To Get Every Script {...} <<`)
+     local Format = ("(took %.3f seconds)"):format(EndTime - StartTime)
+     self:NewWarn(`>> Loaded Module Took {Format} To Get Every Script {...} <<`)
 end
 
-return function ()
-     local self = ModuleLoader
-     
+function ModuleLoader:LoadModule()
      local Success, Result = pcall(function()
           return (self or ModuleLoader) and self:RequireDescendants() and self:Start()
      end)
-     
      if Success then
           self:Calulate("Fully Loaded")
      else
           if not Success then
-               self:NewWarn("Failed To Load Module")
+               self:NewWarn("Failed To Run A Module Loader")
           end
      end
+end
+
+return function ()
+     coroutine.wrap(function()
+          ModuleLoader:LoadModule()
+     end)()
 end
